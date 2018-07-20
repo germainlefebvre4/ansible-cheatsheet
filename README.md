@@ -132,21 +132,21 @@ We usually make a directory to tidy the inventory files.
 
 Inventory with a single server (not very useful) :
 
-`$ vi inventories/single_server`
+`$ vi inventories/server_single`
 ```
 server.domain.fr
 ```
 
 Inventory with range servers (server01 to server09) :
 
-`$ vi inventories/multiple_servers`
+`$ vi inventories/servers_range`
 ```
 server[01-09].domain.fr
 ```
 
 Inventory with multiple servers :
 
-`$ vi inventories/multiple_servers`
+`$ vi inventories/servers_multiple`
 ```
 rhel01.domain.fr
 deb01.domain.fr
@@ -154,7 +154,7 @@ deb01.domain.fr
 
 Inventory with aliases :
 
-`$ vi inventories/multiple_servers`
+`$ vi inventories/servers_aliases`
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
@@ -162,7 +162,7 @@ deb01 deb01.domain.fr
 
 Inventory with groups of servers :
 
-`$ vi inventories/multiple_servers`
+`$ vi inventories/servers_groups`
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
@@ -174,12 +174,13 @@ rhel01
 deb01
 ```
 
-Inventory with groups of groups :
+Inventory with groups of groups (a concrete example) that you name `inventories/servers` :
 
-`$ vi inventories/multiple_servers`
+`$ vi inventories/servers`
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
+win01 win01.domain.fr
 
 [redhat]
 rhel01
@@ -190,6 +191,63 @@ deb01
 [linux:children]
 rhel
 debian
+
+[windows]
+win01
 ```
 
 
+## Ansible Playbooks
+
+Now we know how are formed Tasks and Inventories we can play with Playbooks and start to really run commands on remote servers. Let's take the last previous inventory :
+
+`$ vi inventories/servers`
+```
+rhel01 rhel01.domain.fr
+deb01 deb01.domain.fr
+win01 win01.domain.fr
+
+[redhat]
+rhel01
+
+[debian]
+deb01
+
+[linux:children]
+rhel
+debian
+
+[windows]
+win01
+```
+
+#### Show Ansible Facts of all servers of the Inventory
+
+Build your first Ansible Playbook
+
+`vi setup.yml`
+```
+---
+- hosts: all
+  tasks:
+  - setup:
+```
+
+And run your playbook on :
+
+`ansible-playbook -i inventories/servers setup.yml`
+
+
+#### Run the command `uptime` on linux group servers
+
+`vi uptime.yml`
+```
+---
+- hosts: [linux]
+  tasks:
+  - shell: 'uptime'
+```
+
+Run your playbook on :
+
+`ansible-playbook -i inventories/servers uptime.yml`
