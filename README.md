@@ -189,7 +189,7 @@ rhel01
 deb01
 
 [linux:children]
-rhel
+redhat
 debian
 
 [windows]
@@ -214,7 +214,7 @@ rhel01
 deb01
 
 [linux:children]
-rhel
+redhat
 debian
 
 [windows]
