@@ -197,6 +197,180 @@ win01
 ```
 
 
+## Ansible Tasks
+
+These are a few examples of Ansible Tasks simply
+
+### Manage files
+
+#### Create a file
+```
+- file:
+    path: /etc/file
+    state: touch
+```
+
+#### Set ownership and rights on file
+```
+- file:
+    path: /etc/file
+    owner: root
+    group: root
+    mode: "0740"
+```
+
+#### Set ownership and rights on directory on all its children
+```
+- file:
+    path: /etc/dir/
+    owner: root
+    group: root
+    mode: "0740"
+    recurse: yes
+```
+
+#### Set symlink
+```
+- file:
+    src: /file/to/link/to
+    dest: /path/to/symlink
+    state: link
+```
+
+### Copy files from server to server
+
+#### Copy local file to remote server
+```
+- copy:
+    src: /local/server/file
+    dest: /remote/server/file
+    owner: root
+    group: root
+    mode: 0640
+```
+
+#### Copy current dir file to remote server
+Ansible will take common path as current running command dir (where task/playbook is)
+```
+- copy:
+    src: /local/server/file
+    dest: /remote/server/file
+    owner: root
+    group: root
+    mode: 0640
+```
+
+#### Copy remote file to another path on the same host
+```
+- name: Copy a "sudoers" file on the remote machine for editing
+  copy:
+    src: /etc/file
+    dest: /etc/copy
+    remote_src: yes
+```
+
+#### Generate a file from a template (using variables)
+```
+- template:
+    src: /mytemplates/foo.j2
+    dest: /etc/file.conf
+```
+
+### Update sshd configuration safely, avoid locking yourself out
+Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ensure you are not stuck in the middle.
+```
+- template:
+    src: etc/ssh/sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: '0600'
+    validate: /usr/sbin/sshd -t -f %s
+    backup: yes
+```
+
+### Editing files
+
+#### Use sed tool to change value
+```
+- lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: 'SELINUX=enforcing'
+```
+
+#### Ensure line is not present in file
+```
+- lineinfile:
+    path: /etc/sudoers
+    state: absent
+    regexp: '^%wheel'
+```
+
+#### Insert line after pattern
+```
+- lineinfile:
+    path: /etc/httpd/conf/httpd.conf
+    regexp: '^Listen '
+    insertafter: '^#Listen '
+    line: 'Listen 8080'
+```
+
+#### Insert line before pattern
+```
+- lineinfile:
+    path: /etc/services
+    regexp: '^# port for http'
+    insertbefore: '^www.*80/tcp'
+    line: '# port for http by default'
+```
+
+#### Insert block lines (and changing Marker Pattern)
+```
+- blockinfile:
+    path: /vetc/hosts
+    marker: "### ANSIBLE MANAGED BLOCK ###"
+    insertafter: "localhost"
+    content: |
+      192.168.0.10 printer01
+      192.168.0.11  printer02
+```
+
+#### Replace pattern usgin sed tool
+```
+- replace:
+    path: /etc/hosts
+    regexp: '(localhost)(.*)$'
+    replace: '\1localdomain \1\2'
+    backup: yes
+```
+
+### Archives and stuff around this
+
+#### Copy a tarball on remote and unarchive it
+```
+- name: Extract foo.tgz into /var/lib/foo
+  unarchive:
+    src: foo.tgz
+    dest: /var/lib/foo
+```
+
+### Untar a archive already on remote server
+```
+- unarchive:
+    src: /tmp/foo.zip
+    dest: /usr/local/bin
+    remote_src: yes
+```
+
+### Download tar from link and unarchive it
+```
+  unarchive:
+    src: https://domain.fr/archive.zip
+    dest: /usr/local/bin
+    remote_src: yes
+```
+
 ## Ansible Playbooks
 
 Now we know how are formed Tasks and Inventories we can play with Playbooks and start to really run commands on remote servers. Let's take the last previous inventory :
@@ -251,3 +425,80 @@ And run your playbook on :
 Run your playbook on :
 
 `ansible-playbook -i inventories/servers uptime.yml`
+
+#### Install yum package _httpd_ on RedHat servers
+
+`vi httpd.yml`
+```
+---
+- hosts: [redhat]
+  become: true
+  tasks
+  - yum:
+      name: httpd
+      state: installed
+```
+
+Run playbook on inventory `servers`
+
+`ansible-playbook -i inventory/servers httpd.yml`
+
+
+
+## Ansible Variables
+
+Let's start with a hosrt but consise inventory.
+
+`$ vi inventories/servers`
+```
+rhel01 rhel01.domain.fr
+deb01 deb01.domain.fr
+win01 win01.domain.fr
+
+[redhat]
+rhel01
+
+[debian]
+deb01
+
+[linux:children]
+redhat
+debian
+
+[windows]
+win01
+```
+
+#### Write variables for all the servers whatever the inventory
+
+Variables
+
+`vi group_vars/all`
+```
+timezone: 'Europe/Paris'
+```
+
+Playbook
+
+``
+```
+---
+- hosts: [linux]
+  become: true
+  tasks:
+  - name: Change server timezone
+    file:
+      src: /usr/share/zoneinfo/{{ timezone }}
+      dest: /etc/localtime
+      state: link
+      force: yes
+
+```
+
+
+
+## Ansible Roles
+
+
+## Ansible Modules
+
