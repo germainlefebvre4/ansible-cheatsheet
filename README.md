@@ -6,8 +6,15 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 **Table of Contents**
 1. [Context](#context)
 2. [Ansible Definitions](#ansible-definitions)
-3. [Ansible Commands](#ansible-adhoc-commands)
-   1. [AdHoc Commands](#ansible-adhoc-commands)
+3. [Ansible AdHoc Commands](#ansible-adhoc-commands)
+4. [Ansible Inventories](#ansible-inventories)
+5. [Ansible Tasks](#ansible-tasks)
+6. [Ansible Playbooks](#ansible-playbooks)
+7. [Ansible Variables](#anisble-variables)
+8. [Ansible Roles](#ansible-roles)
+9. [Ansible Modules](#ansible-modules)
+
+   
 
 ### Context
 
@@ -35,7 +42,7 @@ ansible 2.5.3
 ```
 
 
-## Ansible definitions
+## Ansible Definitions
 
 **Ansible Facts**
 
@@ -276,7 +283,7 @@ Ansible will take common path as current running command dir (where task/playboo
     dest: /etc/file.conf
 ```
 
-### Update sshd configuration safely, avoid locking yourself out
+#### Update sshd configuration safely, avoid locking yourself out
 Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ensure you are not stuck in the middle.
 ```
 - template:
@@ -371,6 +378,8 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
     remote_src: yes
 ```
 
+
+
 ## Ansible Playbooks
 
 Now we know how are formed Tasks and Inventories we can play with Playbooks and start to really run commands on remote servers. Let's take the last previous inventory :
@@ -442,6 +451,7 @@ Run your playbook on :
 Run playbook on inventory `servers`
 
 `ansible-playbook -i inventory/servers httpd.yml`
+
 
 
 
