@@ -137,39 +137,29 @@ Ansible Inventories make possible to gather servers in a single file so running 
 
 We usually make a directory to tidy the inventory files.
 
-Inventory with a single server (not very useful) :
-
-`$ vi inventories/server_single`
+#### Inventory with a single server (not very useful) :
 ```
 server.domain.fr
 ```
 
-Inventory with range servers (server01 to server09) :
-
-`$ vi inventories/servers_range`
+#### Inventory with range servers (server01 to server09) :
 ```
 server[01-09].domain.fr
 ```
 
-Inventory with multiple servers :
-
-`$ vi inventories/servers_multiple`
+#### Inventory with multiple servers :
 ```
 rhel01.domain.fr
 deb01.domain.fr
 ```
 
-Inventory with aliases :
-
-`$ vi inventories/servers_aliases`
+#### Inventory with aliases :
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
 ```
 
-Inventory with groups of servers :
-
-`$ vi inventories/servers_groups`
+#### Inventory with groups of servers :
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
@@ -181,9 +171,7 @@ rhel01
 deb01
 ```
 
-Inventory with groups of groups (a concrete example) that you name `inventories/servers` :
-
-`$ vi inventories/servers`
+#### Inventory with groups of groups (a concrete example) that you name `inventories/servers` :
 ```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
@@ -244,8 +232,6 @@ These are a few examples of Ansible Tasks simply
     state: link
 ```
 
-### Copy files from server to server
-
 #### Copy local file to remote server
 ```
 - copy:
@@ -256,15 +242,21 @@ These are a few examples of Ansible Tasks simply
     mode: 0640
 ```
 
-#### Copy current dir file to remote server
-Ansible will take common path as current running command dir (where task/playbook is)
+### Copy files from serverA to serverB
+Server A and server B are defined in the inventory. Server B is the targeted host for the task.
 ```
 - copy:
-    src: /local/server/file
+    src: /remote/serverA/dir/file
+    dest: /remote/serverB/dir/file
+  delegate_to: serverA
+```
+
+#### Copy current dir file to remote server
+Ansible will take common path as current running command dir (where tasks or playbook are)
+```
+- copy:
+    src: file
     dest: /remote/server/file
-    owner: root
-    group: root
-    mode: 0640
 ```
 
 #### Copy remote file to another path on the same host
@@ -352,7 +344,7 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
     backup: yes
 ```
 
-### Archives and stuff around this
+### Archiving
 
 #### Copy a tarball on remote and unarchive it
 ```
@@ -362,7 +354,7 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
     dest: /var/lib/foo
 ```
 
-### Untar a archive already on remote server
+#### Untar a archive already on remote server
 ```
 - unarchive:
     src: /tmp/foo.zip
@@ -370,12 +362,40 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
     remote_src: yes
 ```
 
-### Download tar from link and unarchive it
+#### Download tar from link and unarchive it
 ```
   unarchive:
     src: https://domain.fr/archive.zip
     dest: /usr/local/bin
     remote_src: yes
+```
+
+### Manage services
+
+#### Restart service
+```
+- service: # for rhel6 or systemd: for rhel7
+    name: httpd
+    state: restart
+```
+
+### Run linux commands
+
+#### Run single command
+```
+- command: cat /etc/hosts
+```
+
+#### Run script
+```
+- shell: /var/script/reboot.sh
+```
+
+#### Run multiline commands
+```
+- shell: |
+    echo "toto"
+    exit 0
 ```
 
 
@@ -502,12 +522,75 @@ Playbook
       dest: /etc/localtime
       state: link
       force: yes
-
 ```
 
 
 
 ## Ansible Roles
+
+**Role directories**
+```
+roles/
+└── my-role
+    ├── defaults
+    │   └── main.yml
+    ├── files
+    ├── handlers
+    │   └── main.yml
+    ├── tasks
+    │   └── main.yml
+    ├── templates
+    └── vars
+        └── main.yml
+```
+
+#### Role with simple task
+
+```
+- command: cat /etc/hosts
+```
+
+#### Role with file to copy
+File at `roles/my-role/files/my-file.sh`
+
+Task at `roles/my-role/tasks/main.yml`
+```
+- copy:
+    src: my-file.sh
+    dest: /tmp/my-file.sh
+```
+
+#### Role with template to generate
+Template at `roels/my-role/templates/my-template.sh.j2`
+```
+#!/bin/bash
+echo "{{ timezone }}"
+```
+
+Task at `roles/my-role/tasks/main.yml`
+```
+- template:
+    src: my-template.sh.j2
+    dest: /tmp/my-template.sh
+```
+
+#### Role with trigger to handler
+Handler at `roles/my-role/handlers/main.yml`
+```
+- name: Restart Apache
+  systemd:
+    name: httpd
+    state: restart
+```
+
+Task at `roles/my-role/tasks/main.yml`
+```
+- copy:
+    src: httpd.conf
+    dest: /etc/httpd/conf/httpd.conf
+  notify: Restart Apache
+```
+Will run the handler `Restart Apache` if task `copy` state has changed.
 
 
 ## Ansible Modules
