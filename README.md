@@ -544,6 +544,13 @@ roles/
         └── main.yml
 ```
 
+**Call role in your playbook**
+```
+- hosts: all
+  roles:
+  - my-role
+```
+
 #### Role with simple task
 
 ```
@@ -592,6 +599,71 @@ Task at `roles/my-role/tasks/main.yml`
 ```
 Will run the handler `Restart Apache` if task `copy` state has changed.
 
+#### Role with default variables
+Default variables at ``
+```
+apache_version: '2.4.2'
+```
+
+Task at `roles/my-role/tasks/main.yml`
+```
+- yum:
+    name: httpd-{{ apache_version }}
+    state: present
+```
+
+
+## Including and importing playbooks or tasks or roles
+
+### Include tasks
+Both `import_task` and `include_task`work.
+```
+- hosts: [redhat]
+  tasks:
+  - import_tasks: roles/my-role/tasks/main.yml
+  - include_tasks: roles/my-role/tasks/main.yml
+```
+
+### Include tasks but filter on tag in ansible-playbook command
+Only `import_tasks` works and evaluates tags from tasks.
+
+### Include playbook
+Only `import_playbook` works for including a whole playbook in another one.
+```
+- import_playbook: install_apache.yml
+```
+
+### Include a whole role
+Both `import_role` and `include_role` can be used to call tasks from a role.
+```
+- hosts: [redhat]
+  tasks:
+  - import_role:
+      name: my-role
+      tasks_from: main
+
+```
+
+### Include a taskfile from a role
+Permit to load all variables inherant to the role.
+```
+- hosts: [redhat]
+  tasks:
+  - include_role:
+      name: my-role
+      tasks_from: install # Will call roles/my-role/tasks/install.yml
+```
+
+### Include tasks but filter on tag in ansible-playbook command
+Only `import_role` works for including a whole role in a playbook using tags on commands.
+```
+- hosts: [redhat]
+  tasks:
+  - import_role:
+      name: my-role
+```
+
 
 ## Ansible Modules
+
 
