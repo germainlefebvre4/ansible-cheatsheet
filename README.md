@@ -9,8 +9,13 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 3. [Ansible AdHoc Commands](#ansible-adhoc-commands)
 4. [Ansible Inventories](#ansible-inventories)
 5. [Ansible Tasks](#ansible-tasks)
+   1. [Editing files](#editing-files)
+   2. [Archiving](#archiving)
+   3. [Manage services](#manage-services)
+   4. [Run linux commands](#run-linux-commands)
+   5. [Interact with webservices](#interact-with-webservices)
 6. [Ansible Playbooks](#ansible-playbooks)
-7. [Ansible Variables](#anisble-variables)
+7. [Ansible Variables](#ansible-variables)
 8. [Ansible Roles](#ansible-roles)
 9. [Ansible Modules](#ansible-modules)
 
@@ -242,7 +247,7 @@ These are a few examples of Ansible Tasks simply
     mode: 0640
 ```
 
-### Copy files from serverA to serverB
+#### Copy files from serverA to serverB
 Server A and server B are defined in the inventory. Server B is the targeted host for the task.
 ```
 - copy:
@@ -398,7 +403,27 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
     exit 0
 ```
 
+### Interact with webservices
 
+#### Check a 200 response for a GET request
+```
+- uri:
+    url: http://www.example.com
+```
+
+#### Send a body in POST request with an Basic Auth
+Send an issue in body to a secured Jira and ensure it was gigested (201 response code)
+```
+- uri:
+    url: https://your.jira.example.com/rest/api/2/issue/
+    method: POST
+    user: your_username
+    password: your_pass
+    body: "{{ lookup('file','issue.json') }}"
+    force_basic_auth: yes
+    status_code: 201
+    body_format: json
+```
 
 ## Ansible Playbooks
 
