@@ -1,5 +1,5 @@
-# Ansible CheatSheet
-A very usefull CheatSheet for Ansible usage.
+# Ansible RefCard
+A very usefull RefCard for Ansible usage.
 Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 
 
