@@ -24,7 +24,7 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 ### Context
 
 
-This is the list of the packages version used to make this CheatSheet
+This is the list of the packages version used to make this RefCard
 
 Show your Linux version (here is CentOS/RedHat dist.) with `cat /etc/redhat-release` :
 ```
