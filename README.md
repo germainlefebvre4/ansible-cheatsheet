@@ -5,19 +5,26 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 
 **Table of Contents**
 1. [Context](#context)
-2. [Ansible Definitions](#ansible-definitions)
-3. [Ansible AdHoc Commands](#ansible-adhoc-commands)
-4. [Ansible Inventories](#ansible-inventories)
-5. [Ansible Tasks](#ansible-tasks)
+1. [Upgrade your Ansible version](#upgrade-your-anisble-version)
+1. [Ansible Definitions](#ansible-definitions)
+1. [Ansible AdHoc Commands](#ansible-adhoc-commands)
+1. [Ansible Inventories](#ansible-inventories)
+1. [Ansible Tasks](#ansible-tasks)
    1. [Editing files](#editing-files)
-   2. [Archiving](#archiving)
-   3. [Manage services](#manage-services)
-   4. [Run linux commands](#run-linux-commands)
-   5. [Interact with webservices](#interact-with-webservices)
-6. [Ansible Playbooks](#ansible-playbooks)
-7. [Ansible Variables](#ansible-variables)
-8. [Ansible Roles](#ansible-roles)
-9. [Ansible Modules](#ansible-modules)
+   1. [Archiving](#archiving)
+   1. [Manage services](#manage-services)
+   1. [Run linux commands](#run-linux-commands)
+   1. [Interact with webservices](#interact-with-webservices)
+1. [Ansible Playbooks](#ansible-playbooks)
+1. [Ansible Variables](#ansible-variables)
+   1. [Call a variable](#call-a-variable)
+   1. [Define a variable](#define-a-variable)
+   1. [Variable precedence](#variable-precedence)
+1. [Ansible Plays](#ansible-plays)
+   1. [Available attributes](#available-attributes)
+1. [Ansible Roles](#ansible-roles)
+   1. [Structure of a role](#structure-of-a-role)
+1. [Ansible Modules](#ansible-modules)
 
    
 
@@ -45,6 +52,18 @@ ansible 2.5.3
   executable location = /bin/ansible
   python version = 2.7.5 (default, Apr 11 2018, 07:36:10) [GCC 4.8.5 20150623 (Red Hat 4.8.5-28)]
 ```
+
+
+## Upgrade your Ansible version
+
+Ansible give their Roadmap for v2.5 : [https://docs.ansible.com/ansible/2.5/roadmap/ROADMAP_2_5.html](https://docs.ansible.com/ansible/2.5/roadmap/ROADMAP_2_5.html)
+
+
+Anisble provides porting guides to help you keeping up-to-date:
+* [Ansible 2.0 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.0.html)
+* [Ansible 2.3 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.3.html)
+* [Ansible 2.4 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.4.html)
+* [Ansible 2.5 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.5.html)
 
 
 ## Ansible Definitions
@@ -107,33 +126,30 @@ Usage: ansible <host-pattern> [options]
 Define and run a single task 'playbook' against a set of hosts
 ```
 
-Ask remote server if connection is alright on the remote server (here localhost) with module `ping` :
+Test connection sith remote host:
 
 `ansible localhost -m ping`
 
 
-See all Ansible Facts of the server (here localhost) with module `setup` :
+See all Ansible Facts:
 
 `ansible localhost -m setup`
 
 
-Show a Ansible Variable generated o nthe remote server with module `debug`:
+Resolve a var `myVar`:
 
-`ansible localhost -m setup -a 'myVar'`
+`ansible localhost -m debug -a 'myVar'`
 
 
-Run a shell command -here `uptime`) on the remote server (here localhost) :
+Run a shell command on remote server:
 
 `ansible localhost -m shell -a 'uptime'`
 
 
-If you use Ansible Inventories this is the way to use the AdHoc commands.
-Ask all remote servers from inventory `servers` if connection is alright :
+Apply a task on an inventory `inventories/servers`:
 
 `ansible all -i inventories/servers -m ping`
 
-
-Like this you can use a large panel of Ansible Modules to make single action on the remote server(s).
 
 
 ## Ansible Inventories
@@ -142,44 +158,14 @@ Ansible Inventories make possible to gather servers in a single file so running 
 
 We usually make a directory to tidy the inventory files.
 
-#### Inventory with a single server (not very useful) :
+### A bunch of practice examples :
 ```
 server.domain.fr
-```
-
-#### Inventory with range servers (server01 to server09) :
-```
 server[01-09].domain.fr
-```
 
-#### Inventory with multiple servers :
-```
-rhel01.domain.fr
-deb01.domain.fr
-```
-
-#### Inventory with aliases :
-```
 rhel01 rhel01.domain.fr
 deb01 deb01.domain.fr
-```
-
-#### Inventory with groups of servers :
-```
-rhel01 rhel01.domain.fr
-deb01 deb01.domain.fr
-
-[redhat]
-rhel01
-
-[debian]
-deb01
-```
-
-#### Inventory with groups of groups (a concrete example) that you name `inventories/servers` :
-```
-rhel01 rhel01.domain.fr
-deb01 deb01.domain.fr
+arch01 arch01.domain.fr
 win01 win01.domain.fr
 
 [redhat]
@@ -191,6 +177,9 @@ deb01
 [linux:children]
 redhat
 debian
+
+[linux]
+arch01
 
 [windows]
 win01
@@ -369,7 +358,7 @@ Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ens
 
 #### Download tar from link and unarchive it
 ```
-  unarchive:
+- unarchive:
     src: https://domain.fr/archive.zip
     dest: /usr/local/bin
     remote_src: yes
@@ -502,69 +491,157 @@ Run playbook on inventory `servers`
 
 ## Ansible Variables
 
-Let's start with a hosrt but consise inventory.
+### Call a variable
 
-`$ vi inventories/servers`
+A Ansible variable is called in Jinja Templating way : `{{ my_variable }}`.
+
+You can call variable everywhere in Ansible (tasks, variables, name, ...)
+
+### Define a variable
+
+You can have 3 types of variables:
+* String
+* List
+* Dict
+
+
+#### String
+
+A single Key Value where key do not have any space and value is a string (with or without quotation marks).
 ```
-rhel01 rhel01.domain.fr
-deb01 deb01.domain.fr
-win01 win01.domain.fr
+my_string: "value"
+``` 
 
-[redhat]
-rhel01
+#### List
 
-[debian]
-deb01
-
-[linux:children]
-redhat
-debian
-
-[windows]
-win01
-```
-
-#### Write variables for all the servers whatever the inventory
-
-Variables
-
-`vi group_vars/all`
-```
-timezone: 'Europe/Paris'
+A python list representing an 'array' in other words/languages:
+```yaml
+my_list: ["bob", "alice"]
 ```
 
-Playbook
+#### Dictionary
 
-``
+A python dictionary that structure data:
 ```
----
-- hosts: [linux]
-  become: true
+my_dict
+    item1: value1
+    item2: value2
+```
+
+### Variable precedence
+
+You can set Ansible variables in multiple places like `group_vars`, `playbooks`, `roles` etc... but they are evaluated according to a precedence.
+
+Here is the order of precedence from least to greatest:
+```
+role defaults
+inventory file or script group vars
+inventory group_vars/all
+playbook group_vars/all
+inventory group_vars/*
+playbook group_vars/*
+inventory file or script host vars
+inventory host_vars/*
+playbook host_vars/*
+host facts
+play vars
+play vars_prompt
+play vars_files
+role vars (defined in role/vars/main.yml)
+block vars (only for tasks in block)
+task vars (only for the task)
+role (and include_role) params
+include params
+include_vars
+set_facts / registered vars
+extra vars (always win precedence)
+```
+
+
+## Ansible Plays
+
+A sufficient list of attributes for Ansible Play when running a playbooks:
+
+```
+- hosts: webservers
+  accelerate: no
+  accelerate_port: 5099
+  ansible_connection: local
+  any_errors_fatal: True
+  become: yes
+  become_method: su
+  become_user: postgress
+  become_flags: True
+  debugger: on_failed
+  gather_facts: no
+  max_fail_percentage: 30
+  order: sorted
+  remote_user: root
+  serial: 5
+  strategy: debug
+  vars:
+    http_port: 80
+  vars_files:
+    - "vars.yml"
+  vars_prompt:
+    - name: "my_password2"
+      prompt: "Enter password2"
+      default: "secret"
+      private: yes
+      encrypt: "md5_crypt"
+      confirm: yes
+      salt: 1234
+      salt_size: 8
+  tags: 
+    - stuff
+  pre_tasks:
+    - <task>
+  roles:
+    - common
+    - common
+      vars:
+        port: 5000
+      when: "bar == 'Baz'"
+      tags : [one, two]
+    - common
+    - { role: common, port: 5000, when: "bar == 'Baz'", tags :[one, two] }
+    - common
+      when: month == 'Jan'
   tasks:
-  - name: Change server timezone
-    file:
-      src: /usr/share/zoneinfo/{{ timezone }}
-      dest: /etc/localtime
-      state: link
-      force: yes
+    - include: tasks.yaml
+    - include: tasks.yaml
+      vars:
+        foo: aaa 
+        baz:
+          - z
+          - y
+    - { include: tasks.yaml, foo: zzz, baz: [a,b]}
+    - include: tasks.yaml
+      when: day == 'Thursday'
+    - <task>
+  post_tasks:
+    - <task>
 ```
-
 
 
 ## Ansible Roles
 
-**Role directories**
+### Structure of a role
+
+Role directories strucutre:
 ```
 roles/
 └── my-role
     ├── defaults
     │   └── main.yml
     ├── files
+        └── file
     ├── handlers
     │   └── main.yml
     ├── tasks
     │   └── main.yml
     ├── templates
+        └── template.j2
     └── vars
         └── main.yml
 ```
