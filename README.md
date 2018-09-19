@@ -154,11 +154,11 @@ Apply a task on an inventory `inventories/servers`:
 
 ## Ansible Inventories
 
-Ansible Inventories make possible to gather servers in a single file so running commands on all these hosts in a single command. File is formated in a custom langage with similarities with INI files.
+Ansible Inventories make possible to gather servers in a single file to run commands on all these hosts in a single command.
 
-We usually make a directory to tidy the inventory files.
+Inventories are usually tidied by environments to let the group_vars operate on tasks and roles.
 
-### A bunch of practice examples :
+**Practice by examples**
 ```
 server.domain.fr
 server[01-09].domain.fr
@@ -188,292 +188,53 @@ win01
 
 ## Ansible Tasks
 
-These are a few examples of Ansible Tasks simply
+A task is a YAML structure to perform and action through Ansible
 
-### Manage files
-
-#### Create a file
+Task definition :
 ```
-- file:
-    path: /etc/file
-    state: touch
-```
-
-#### Set ownership and rights on file
-```
-- file:
-    path: /etc/file
-    owner: root
-    group: root
-    mode: "0740"
-```
-
-#### Set ownership and rights on directory on all its children
-```
-- file:
-    path: /etc/dir/
-    owner: root
-    group: root
-    mode: "0740"
-    recurse: yes
-```
-
-#### Set symlink
-```
-- file:
-    src: /file/to/link/to
-    dest: /path/to/symlink
-    state: link
-```
-
-#### Copy local file to remote server
-```
-- copy:
-    src: /local/server/file
-    dest: /remote/server/file
-    owner: root
-    group: root
-    mode: 0640
+- name: The task name to make things clearly
+  become: yes
+  become_method: sudo
+  become_user: root
+  check_mode: yes
+  diff: no
+  remote_user: ansible
+  ignore_errors: True
+  import_tasks: more_handlers
+  include_tasks: other-tasks.yml
+  notify: restart apache
+  register: my_register
+  changed_when: False
+  failed_when: False
+  vars:
+    - myvar: toto
+    myfiles:
+      -  default.conf
+  loop:
+    - item1
+    - ["item2", "item3"]
+    - { name: "item4", description: "Desc Item 4" }
+  when:
+    - my_register is defined
+    - ansible_distribution == "CentOS"
+    - ansible_distribution_major_version == "7" 
+  block:
+    - name: Task to run in block
+      ...
+  rescue:
+    - name: Task when block failed
+  always:
+    - name: Task always run before/after block
 ```
 
-#### Copy files from serverA to serverB
-Server A and server B are defined in the inventory. Server B is the targeted host for the task.
-```
-- copy:
-    src: /remote/serverA/dir/file
-    dest: /remote/serverB/dir/file
-  delegate_to: serverA
-```
-
-#### Copy current dir file to remote server
-Ansible will take common path as current running command dir (where tasks or playbook are)
-```
-- copy:
-    src: file
-    dest: /remote/server/file
-```
-
-#### Copy remote file to another path on the same host
-```
-- name: Copy a "sudoers" file on the remote machine for editing
-  copy:
-    src: /etc/file
-    dest: /etc/copy
-    remote_src: yes
-```
-
-#### Generate a file from a template (using variables)
-```
-- template:
-    src: /mytemplates/foo.j2
-    dest: /etc/file.conf
-```
-
-#### Update sshd configuration safely, avoid locking yourself out
-Copy Jinja2 template from surrent dir `etc/ssh/sshd_config.j2` to remote and ensure you are not stuck in the middle.
-```
-- template:
-    src: etc/ssh/sshd_config.j2
-    dest: /etc/ssh/sshd_config
-    owner: root
-    group: root
-    mode: '0600'
-    validate: /usr/sbin/sshd -t -f %s
-    backup: yes
-```
-
-### Editing files
-
-#### Use sed tool to change value
-```
-- lineinfile:
-    path: /etc/selinux/config
-    regexp: '^SELINUX='
-    line: 'SELINUX=enforcing'
-```
-
-#### Ensure line is not present in file
-```
-- lineinfile:
-    path: /etc/sudoers
-    state: absent
-    regexp: '^%wheel'
-```
-
-#### Insert line after pattern
-```
-- lineinfile:
-    path: /etc/httpd/conf/httpd.conf
-    regexp: '^Listen '
-    insertafter: '^#Listen '
-    line: 'Listen 8080'
-```
-
-#### Insert line before pattern
-```
-- lineinfile:
-    path: /etc/services
-    regexp: '^# port for http'
-    insertbefore: '^www.*80/tcp'
-    line: '# port for http by default'
-```
-
-#### Insert block lines (and changing Marker Pattern)
-```
-- blockinfile:
-    path: /vetc/hosts
-    marker: "### ANSIBLE MANAGED BLOCK ###"
-    insertafter: "localhost"
-    content: |
-      192.168.0.10 printer01
-      192.168.0.11  printer02
-```
-
-#### Replace pattern usgin sed tool
-```
-- replace:
-    path: /etc/hosts
-    regexp: '(localhost)(.*)$'
-    replace: '\1localdomain \1\2'
-    backup: yes
-```
-
-### Archiving
-
-#### Copy a tarball on remote and unarchive it
-```
-- name: Extract foo.tgz into /var/lib/foo
-  unarchive:
-    src: foo.tgz
-    dest: /var/lib/foo
-```
-
-#### Untar a archive already on remote server
-```
-- unarchive:
-    src: /tmp/foo.zip
-    dest: /usr/local/bin
-    remote_src: yes
-```
-
-#### Download tar from link and unarchive it
-```
-- unarchive:
-    src: https://domain.fr/archive.zip
-    dest: /usr/local/bin
-    remote_src: yes
-```
-
-### Manage services
-
-#### Restart service
-```
-- service: # for rhel6 or systemd: for rhel7
-    name: httpd
-    state: restart
-```
-
-### Run linux commands
-
-#### Run single command
-```
-- command: cat /etc/hosts
-```
-
-#### Run script
-```
-- shell: /var/script/reboot.sh
-```
-
-#### Run multiline commands
-```
-- shell: |
-    echo "toto"
-    exit 0
-```
-
-### Interact with webservices
-
-#### Check a 200 response for a GET request
-```
-- uri:
-    url: http://www.example.com
-```
-
-#### Send a body in POST request with an Basic Auth
-Send an issue in body to a secured Jira and ensure it was gigested (201 response code)
-```
-- uri:
-    url: https://your.jira.example.com/rest/api/2/issue/
-    method: POST
-    user: your_username
-    password: your_pass
-    body: "{{ lookup('file','issue.json') }}"
-    force_basic_auth: yes
-    status_code: 201
-    body_format: json
-```
 
 ## Ansible Playbooks
 
-Now we know how are formed Tasks and Inventories we can play with Playbooks and start to really run commands on remote servers. Let's take the last previous inventory :
+Practise by examples
 
-`$ vi inventories/servers`
+**Install yum package _httpd_ on RedHat servers**
+
 ```
-rhel01 rhel01.domain.fr
-deb01 deb01.domain.fr
-win01 win01.domain.fr
-
-[redhat]
-rhel01
-
-[debian]
-deb01
-
-[linux:children]
-redhat
-debian
-
-[windows]
-win01
-```
-
-#### Show Ansible Facts of all servers of the Inventory
-
-Build your first Ansible Playbook
-
-`vi setup.yml`
-```
----
-- hosts: all
-  tasks:
-  - setup:
-```
-
-And run your playbook on :
-
-`ansible-playbook -i inventories/servers setup.yml`
-
-
-#### Run the command `uptime` on linux group servers
-
-`vi uptime.yml`
-```
----
-- hosts: [linux]
-  tasks:
-  - shell: 'uptime'
-```
-
-Run your playbook on :
-
-`ansible-playbook -i inventories/servers uptime.yml`
-
-#### Install yum package _httpd_ on RedHat servers
-
-`vi httpd.yml`
-```
----
 - hosts: [redhat]
   become: true
   tasks
@@ -482,10 +243,14 @@ Run your playbook on :
       state: installed
 ```
 
-Run playbook on inventory `servers`
-
-`ansible-playbook -i inventory/servers httpd.yml`
-
+**Run roles on Docker servers**
+```
+- hosts: [docker]
+  become: true
+  roles:
+  - docker
+  - kubernetes
+```
 
 
 
@@ -502,27 +267,12 @@ You can call variable everywhere in Ansible (tasks, variables, name, ...)
 You can have 3 types of variables:
 * String
 * List
-* Dict
-
-
-#### String
+* Dictionary
 
 A single Key Value where key do not have any space and value is a string (with or without quotation marks).
 ```
 my_string: "value"
-``` 
-
-#### List
-
-A python list representing an 'array' in other words/languages:
-```yaml
 my_list: ["bob", "alice"]
-```
-
-#### Dictionary
-
-A python dictionary that structure data:
-```
 my_dict
     item1: value1
     item2: value2
@@ -660,9 +410,9 @@ roles/
 ```
 
 #### Role with file to copy
-File at `roles/my-role/files/my-file.sh`
+File at `roles/example/files/my-file.sh`
 
-Task at `roles/my-role/tasks/main.yml`
+Task at `roles/example/tasks/main.yml`
 ```
 - copy:
     src: my-file.sh
@@ -670,13 +420,13 @@ Task at `roles/my-role/tasks/main.yml`
 ```
 
 #### Role with template to generate
-Template at `roels/my-role/templates/my-template.sh.j2`
+Template at `roles/example/templates/my-template.sh.j2`
 ```
 #!/bin/bash
 echo "{{ timezone }}"
 ```
 
-Task at `roles/my-role/tasks/main.yml`
+Task at `roles/example/tasks/main.yml`
 ```
 - template:
     src: my-template.sh.j2
@@ -684,7 +434,7 @@ Task at `roles/my-role/tasks/main.yml`
 ```
 
 #### Role with trigger to handler
-Handler at `roles/my-role/handlers/main.yml`
+Handler at `roles/example/handlers/main.yml`
 ```
 - name: Restart Apache
   systemd:
@@ -692,7 +442,7 @@ Handler at `roles/my-role/handlers/main.yml`
     state: restart
 ```
 
-Task at `roles/my-role/tasks/main.yml`
+Task at `roles/example/tasks/main.yml`
 ```
 - copy:
     src: httpd.conf
@@ -707,7 +457,7 @@ Default variables at ``
 apache_version: '2.4.2'
 ```
 
-Task at `roles/my-role/tasks/main.yml`
+Task at `roles/example/tasks/main.yml`
 ```
 - yum:
     name: httpd-{{ apache_version }}
@@ -722,8 +472,8 @@ Both `import_task` and `include_task`work.
 ```
 - hosts: [redhat]
   tasks:
-  - import_tasks: roles/my-role/tasks/main.yml
-  - include_tasks: roles/my-role/tasks/main.yml
+  - import_tasks: roles/example/tasks/main.yml
+  - include_tasks: roles/example/tasks/main.yml
 ```
 
 ### Include tasks but filter on tag in ansible-playbook command
@@ -741,7 +491,7 @@ Both `import_role` and `include_role` can be used to call tasks from a role.
 - hosts: [redhat]
   tasks:
   - import_role:
-      name: my-role
+      name: example
       tasks_from: main
 
 ```
@@ -752,8 +502,8 @@ Permit to load all variables inherant to the role.
 - hosts: [redhat]
   tasks:
   - include_role:
-      name: my-role
-      tasks_from: install # Will call roles/my-role/tasks/install.yml
+      name: example
+      tasks_from: install # Will call roles/example/tasks/install.yml
 ```
 
 ### Include tasks but filter on tag in ansible-playbook command
@@ -762,7 +512,7 @@ Only `import_role` works for including a whole role in a playbook using tags on 
 - hosts: [redhat]
   tasks:
   - import_role:
-      name: my-role
+      name: example
 ```
 
 
