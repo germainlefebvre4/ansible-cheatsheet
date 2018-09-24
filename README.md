@@ -518,4 +518,81 @@ Only `import_role` works for including a whole role in a playbook using tags on 
 
 ## Ansible Modules
 
+### Location
+
+Store your modules on :
+* Local side (current dir) : Create your Ansibel Module directly in your ansible rundir `./library`,
+* Server side (all users) : Define the path with the attribute `library` in `/etc/ansible/ansible.cfg`.
+
+### Instanciate your Module Class
+
+```
+class MyAnsibleModule(AnsibleModule):
+
+  def __init__(self, *args, **kwargs):
+    self._output = []
+    self._facts = dict()
+    super(MyAnsibleModule, self).__init__(*args, **kwargs)
+
+  def process(self):
+    [...]
+```
+
+### Run your Class
+
+```
+if __name__ == '__main__':
+  MyAnsibleModule().process()
+```
+
+
+### Define your attributes
+
+Define your module arguments.
+```
+def main():
+  MyAnsibleModule(
+    argument_spec=dict(
+      url=dict(type='str', required=True),
+      type=dict(type='str', required=True, choices=['indice', 'document']),
+      state=dict(type='str', choices=['present','absent'], default='present'),
+    )
+  ).process()
+```
+
+Call your module argument on processing.
+```
+def process(self):
+    try:
+        changed = False
+
+        # Retrieve value for attribute 'url'
+        param_url = self.params['url']
+
+        self.exit_json(changed=changed, ansible_facts={}, output=self._output)
+    except Exception as e:
+        self.fail_json(msg=(e.message, self._output))
+```
+
+### Use the Check Mode
+
+Enable the check mode.
+```
+def main():
+    MyAnsibleModule(
+        argument_spec=dict(
+          [...]
+        ),
+        supports_check_mode=True
+    ).process()
+```
+
+Use the check mode in processing. Process to your action after checking check_mode statement.
+```
+def process(self):
+    # Stop if check_mode is true before doing any action
+    if self.check_mode:
+        return True
+    # If check_mode is false keep doing your actions
+```
 
