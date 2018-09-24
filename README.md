@@ -273,7 +273,7 @@ A single Key Value where key do not have any space and value is a string (with o
 ```
 my_string: "value"
 my_list: ["bob", "alice"]
-my_dict
+my_dict:
     item1: value1
     item2: value2
 ```
