@@ -486,24 +486,22 @@ Only `import_playbook` works for including a whole playbook in another one.
 ```
 
 ### Include a whole role
-Both `import_role` and `include_role` can be used to call tasks from a role.
+Both `import_role` and `include_role` can be used to call tasks from a role. This will include the whole role `example`.
 ```
 - hosts: [redhat]
   tasks:
   - import_role:
       name: example
-      tasks_from: main
-
 ```
 
 ### Include a taskfile from a role
-Permit to load all variables inherant to the role.
+Permit to load all variables inherant to the role. This will include the task `install.yml`from the role `example`.
 ```
 - hosts: [redhat]
   tasks:
   - include_role:
       name: example
-      tasks_from: install # Will call roles/example/tasks/install.yml
+      tasks_from: install
 ```
 
 ### Include tasks but filter on tag in ansible-playbook command
