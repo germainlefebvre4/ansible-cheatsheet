@@ -355,19 +355,16 @@ A sufficient list of attributes for Ansible Play when running a playbooks:
       tags : [one, two]
     - common
     - { role: common, port: 5000, when: "bar == 'Baz'", tags :[one, two] }
-    - common
-      when: month == 'Jan'
   tasks:
     - include: tasks.yaml
     - include: tasks.yaml
+      when: day == 'Thursday'
       vars:
         foo: aaa 
         baz:
           - z
           - y
     - { include: tasks.yaml, foo: zzz, baz: [a,b]}
-    - include: tasks.yaml
-      when: day == 'Thursday'
     - <task>
   post_tasks:
     - <task>
@@ -385,13 +382,13 @@ roles/
     ├── defaults
     │   └── main.yml
     ├── files
-        └── file
+    |   └── file
     ├── handlers
     │   └── main.yml
     ├── tasks
     │   └── main.yml
     ├── templates
-        └── template.j2
+    |   └── template.j2
     └── vars
         └── main.yml
 ```
