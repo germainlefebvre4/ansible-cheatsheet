@@ -1,30 +1,21 @@
 # Ansible RefCard
-A very usefull RefCard for Ansible usage.
-Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
+RefCard for Ansible usage.
+
+Written by Germain LEFEBVRE by August 2018 for Ansible v2.7 usage.
 
 
 **Table of Contents**
 1. [Context](#context)
-1. [Upgrade your Ansible version](#upgrade-your-anisble-version)
+1. [Upgrade your Ansible version](#upgrade-your-ansible-version)
 1. [Ansible Definitions](#ansible-definitions)
 1. [Ansible Configuration](#ansible-configuration)
 1. [Ansible AdHoc Commands](#ansible-adhoc-commands)
 1. [Ansible Inventories](#ansible-inventories)
 1. [Ansible Tasks](#ansible-tasks)
-   1. [Editing files](#editing-files)
-   1. [Archiving](#archiving)
-   1. [Manage services](#manage-services)
-   1. [Run linux commands](#run-linux-commands)
-   1. [Interact with webservices](#interact-with-webservices)
 1. [Ansible Playbooks](#ansible-playbooks)
 1. [Ansible Variables](#ansible-variables)
-   1. [Variable Definition](#variable-definition)
-   1. [Variable typology](#variable-typology)
-   1. [Variable precedence](#variable-precedence)
 1. [Ansible Plays](#ansible-plays)
-   1. [Available attributes](#available-attributes)
 1. [Ansible Roles](#ansible-roles)
-   1. [Structure of a role](#structure-of-a-role)
 1. [Ansible Modules](#ansible-modules)
 1. [Ansible Vault](#ansible-vault)
 
@@ -33,21 +24,30 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 ### Context
 
 
-This is the list of the packages version used to make this RefCard
+This is the list of the packages version used to make this RefCard.
 
-Show your Linux version (here is CentOS/RedHat dist.) with `cat /etc/redhat-release` :
+Operating System distribution and version:
+```sh
+cat /etc/redhat-release
+```
 ```
 CentOS Linux release 7.5.1804 (Core)
 ```
 
-Python version on your system with `python --version` :
+Python version:
+```sh
+python --version
+```
 ```
 Python 2.7.5
 ```
 
-Finally  Ansible version used with `ansible --version` :
+Ansible version:
+```sh
+ansible --version
 ```
-ansible 2.5.3
+```
+ansible 2.7.1
   config file = /etc/ansible/ansible.cfg
   configured module search path = [u'/home/ansible/.ansible/plugins/modules', u'/usr/share/ansible/plugins/modules']
   ansible python module location = /usr/lib/python2.7/site-packages/ansible
@@ -57,8 +57,7 @@ ansible 2.5.3
 
 
 ## Upgrade your Ansible version
-
-Ansible give their Roadmap for v2.5 : [https://docs.ansible.com/ansible/2.5/roadmap/ROADMAP_2_5.html](https://docs.ansible.com/ansible/2.5/roadmap/ROADMAP_2_5.html)
+Ansible give their Roadmap for v2.7 : [https://docs.ansible.com/ansible/2.7/roadmap/ROADMAP_2_7.html](https://docs.ansible.com/ansible/2.7/roadmap/ROADMAP_2_7.html)
 
 
 Anisble provides porting guides to help you keeping up-to-date:
@@ -70,7 +69,6 @@ Anisble provides porting guides to help you keeping up-to-date:
 * [Ansible 2.7 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.7.html)
 
 ## Ansible Definitions
-
 ### Ansible Facts
 The Facts are variables used by Ansible to persist data through hosts and executions. There are native facts are stored on local server (disk or in-memory) and user facts defined by Human actions. It is important to get that facts are stored by group of actions OR by host.
 
@@ -357,9 +355,7 @@ These are what files refer to:
 ```
 
 #### Role with file to copy
-File at `roles/example/files/my-file.sh`
-
-Task at `roles/example/tasks/main.yml`
+File at `roles/example/files/my-file.sh` and task at `roles/example/tasks/main.yml`.
 ```yaml
 - copy:
     src: my-file.sh
@@ -368,29 +364,29 @@ Task at `roles/example/tasks/main.yml`
 
 #### Role with template to generate
 Template at `roles/example/templates/my-template.sh.j2`
-```
+```sh
 #!/bin/bash
 echo "{{ timezone }}"
 ```
 
 Task at `roles/example/tasks/main.yml`
-```
+```yaml
 - template:
     src: my-template.sh.j2
     dest: /tmp/my-template.sh
 ```
 
 #### Role with trigger to handler
-Handler at `roles/example/handlers/main.yml`
-```
+Handler at `roles/example/handlers/main.yml`.
+```yaml
 - name: Restart Apache
   systemd:
     name: httpd
     state: restart
 ```
 
-Task at `roles/example/tasks/main.yml`
-```
+Task at `roles/example/tasks/main.yml`.
+```yaml
 - copy:
     src: httpd.conf
     dest: /etc/httpd/conf/httpd.conf
@@ -399,13 +395,13 @@ Task at `roles/example/tasks/main.yml`
 Will run the handler `Restart Apache` if task `copy` state has changed.
 
 #### Role with default variables
-Default variables at ``
-```
+Default variables at `roles/example/defaults/main.yml`
+```yaml
 apache_version: '2.4.2'
 ```
 
 Task at `roles/example/tasks/main.yml`
-```
+```yaml
 - yum:
     name: httpd-{{ apache_version }}
     state: present
@@ -413,10 +409,9 @@ Task at `roles/example/tasks/main.yml`
 
 
 ## Including and importing playbooks or tasks or roles
-
 ### Include tasks
-Both `import_task` and `include_task`work.
-```
+Both `import_task` and `include_task` work.
+```yaml
 - hosts: [redhat]
   tasks:
   - import_tasks: roles/example/tasks/main.yml
@@ -428,13 +423,13 @@ Only `import_tasks` works and evaluates tags from tasks.
 
 ### Include playbook
 Only `import_playbook` works for including a whole playbook in another one.
-```
+```yaml
 - import_playbook: install_apache.yml
 ```
 
 ### Include a whole role
 Both `import_role` and `include_role` can be used to call tasks from a role. This will include the whole role `example`.
-```
+```yaml
 - hosts: [redhat]
   tasks:
   - import_role:
@@ -443,7 +438,7 @@ Both `import_role` and `include_role` can be used to call tasks from a role. Thi
 
 ### Include a taskfile from a role
 Permit to load all variables inherant to the role. This will include the task `install.yml`from the role `example`.
-```
+```yaml
 - hosts: [redhat]
   tasks:
   - include_role:
@@ -453,7 +448,7 @@ Permit to load all variables inherant to the role. This will include the task `i
 
 ### Include tasks but filter on tag in ansible-playbook command
 Only `import_role` works for including a whole role in a playbook using tags on commands.
-```
+```yaml
 - hosts: [redhat]
   tasks:
   - import_role:
@@ -462,30 +457,28 @@ Only `import_role` works for including a whole role in a playbook using tags on 
 
 
 ## Ansible Modules
-
 ### Location
-
 Store your modules on :
-* Local side (current dir) : Create your Ansibel Module directly in your ansible rundir `./library`,
+* Local side (current dir) : Create your Ansibel Module directly in your ansible rundir in a directory `library`,
 * Server side (all users) : Define the path with the attribute `library` in `/etc/ansible/ansible.cfg`.
+```ini
+library        = /usr/share/my_modules/
+```
 
 ### Instanciate your Module Class
-
-```
+```python
 class MyAnsibleModule(AnsibleModule):
+    def __init__(self, *args, **kwargs):
+        self._output = []
+        self._facts = dict()
+        super(MyAnsibleModule, self).__init__(*args, **kwargs)
 
-  def __init__(self, *args, **kwargs):
-    self._output = []
-    self._facts = dict()
-    super(MyAnsibleModule, self).__init__(*args, **kwargs)
-
-  def process(self):
-    [...]
+    def process(self):
+        [...]
 ```
 
 ### Run your Class
-
-```
+```python
 if __name__ == '__main__':
   MyAnsibleModule().process()
 ```
@@ -494,19 +487,23 @@ if __name__ == '__main__':
 ### Define your attributes
 
 Define your module arguments.
-```
-def main():
-  MyAnsibleModule(
+```python
+MyAnsibleModule(
     argument_spec=dict(
-      url=dict(type='str', required=True),
-      type=dict(type='str', required=True, choices=['indice', 'document']),
-      state=dict(type='str', choices=['present','absent'], default='present'),
+        url=dict(type='str',
+                 required=True),
+        type=dict(type='str',
+                  required=True,
+                  choices=['indice', 'document']),
+        state=dict(type='str',
+                   choices=['present','absent'],
+                   default='present')
     )
-  ).process()
+).process()
 ```
 
 Call your module argument on processing.
-```
+```python
 def process(self):
     try:
         changed = False
@@ -520,25 +517,22 @@ def process(self):
 ```
 
 ### Use the Check Mode
-
 Enable the check mode.
-```
+```python
 def main():
     MyAnsibleModule(
-        argument_spec=dict(
-          [...]
-        ),
-        supports_check_mode=True
+        supports_check_mode=True,
+        [...]
     ).process()
 ```
 
 Use the check mode in processing. Process to your action after checking check_mode statement.
-```
+```python
 def process(self):
     # Stop if check_mode is true before doing any action
     if self.check_mode:
         return True
-    # If check_mode is false keep doing your actions
+    # Keep doing actions if check_mode is false
 ```
 
 ## Ansible Vault
