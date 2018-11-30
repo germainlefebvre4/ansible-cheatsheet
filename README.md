@@ -7,6 +7,7 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
 1. [Context](#context)
 1. [Upgrade your Ansible version](#upgrade-your-anisble-version)
 1. [Ansible Definitions](#ansible-definitions)
+1. [Ansible Configuration](#ansible-configuration)
 1. [Ansible AdHoc Commands](#ansible-adhoc-commands)
 1. [Ansible Inventories](#ansible-inventories)
 1. [Ansible Tasks](#ansible-tasks)
@@ -17,14 +18,15 @@ Written by Germain LEFEBVRE by August 2018 from Ansible v2.5 usage.
    1. [Interact with webservices](#interact-with-webservices)
 1. [Ansible Playbooks](#ansible-playbooks)
 1. [Ansible Variables](#ansible-variables)
-   1. [Call a variable](#call-a-variable)
-   1. [Define a variable](#define-a-variable)
+   1. [Variable Definition](#variable-definition)
+   1. [Variable typology](#variable-typology)
    1. [Variable precedence](#variable-precedence)
 1. [Ansible Plays](#ansible-plays)
    1. [Available attributes](#available-attributes)
 1. [Ansible Roles](#ansible-roles)
    1. [Structure of a role](#structure-of-a-role)
 1. [Ansible Modules](#ansible-modules)
+1. [Ansible Vault](#ansible-vault)
 
    
 
@@ -60,106 +62,66 @@ Ansible give their Roadmap for v2.5 : [https://docs.ansible.com/ansible/2.5/road
 
 
 Anisble provides porting guides to help you keeping up-to-date:
-* [Ansible 2.0 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.0.html)
-* [Ansible 2.3 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.3.html)
-* [Ansible 2.4 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.4.html)
-* [Ansible 2.5 Porting Guide](https://docs.ansible.com/ansible/2.5/porting_guides/porting_guide_2.5.html)
-
+* [Ansible 2.0 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.0.html)
+* [Ansible 2.3 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.3.html)
+* [Ansible 2.4 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.4.html)
+* [Ansible 2.5 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.5.html)
+* [Ansible 2.6 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.6.html)
+* [Ansible 2.7 Porting Guide](https://docs.ansible.com/ansible/2.7/porting_guides/porting_guide_2.7.html)
 
 ## Ansible Definitions
 
-**Ansible Facts**
-
+### Ansible Facts
 The Facts are variables used by Ansible to persist data through hosts and executions. There are native facts are stored on local server (disk or in-memory) and user facts defined by Human actions. It is important to get that facts are stored by group of actions OR by host.
 
-
-**Ansible Hosts**
-
+### Ansible Hosts
 The Hosts are just servers that the Ansible Server can reach trhough its preferred protocol.
 
-
-**Ansible Inventories**
-
+### Ansible Inventories
 The Inventories are list of Hosts defined by FQDN and tidied in groups. Groups can be composed with hosts or group of hosts. Hosts can be aliased to make the list customisable.
 
-
-**Ansible Tasks**
-
+### Ansible Tasks
 The Tasks are the actions launched on remote Hosts. Tasks are written in YAML langage in a descriptive structure way making the read and write uniform through any tasks in the world.
 
-
-**Ansible Variables**
-
+### Ansible Variables
 The Variables are the way for Ansible to pass custom values in tasks (and more over).
 
-
-**Ansible Playbooks**
-
+### Ansible Playbooks
 The Playbooks are the gathering of tasks and hosts. So a Playbook defines a list of tasks to perform on remote servers.
 
-
-**Ansible Roles**
-
+### Ansible Roles
 The Roles are the tidy way to write playbooks. It permits to store a group of actions with the same purpose and to call them in playbooks in a single line.
 
-
-**Ansible Handlers**
-
+### Ansible Handlers
 Ansible Handlers are action triggers called from tasks and run at the end of a play. A Handler is a tasks defined by its name and called with its name.
 
-
-**Ansible Modules**
-
+### Ansible Modules
 Modules are scripts written in Python and making uniform actions possible in giving common inputs for users and generating outputs regarding the command played in the module.
 
 
+## Ansible Configuration
+Configuration can be made and used in a file which will be searched for in the following order:
+* ansible.cfg (in the current directory)
+* ~/.ansible.cfg (in the home directory)
+* /etc/ansible/ansible.cfg
+
 
 ## Ansible AdHoc Commands
-
 AdHoc commands are commands launched on the fly with writting any complex structured files.
-Let's first use Ansible AdHoc commands with local machine.
 
-`ansible --help`
+```sh
+ansible localhost -m ping
+ansible localhost -m setup
+ansible localhost -m debug -a 'myVar'
+ansible localhost -m shell -a 'uptime'
+ansible all -i inventories/servers -m ping
 ```
-Usage: ansible <host-pattern> [options]
-
-Define and run a single task 'playbook' against a set of hosts
-```
-
-Test connection sith remote host:
-
-`ansible localhost -m ping`
-
-
-See all Ansible Facts:
-
-`ansible localhost -m setup`
-
-
-Resolve a var `myVar`:
-
-`ansible localhost -m debug -a 'myVar'`
-
-
-Run a shell command on remote server:
-
-`ansible localhost -m shell -a 'uptime'`
-
-
-Apply a task on an inventory `inventories/servers`:
-
-`ansible all -i inventories/servers -m ping`
-
-
 
 ## Ansible Inventories
+Ansible Inventories make possible to gather servers in a single file to run commands on all these hosts. Inventories are usually organized by environments (a file by env) to let the group_vars operate on tasks and roles.
 
-Ansible Inventories make possible to gather servers in a single file to run commands on all these hosts in a single command.
-
-Inventories are usually tidied by environments to let the group_vars operate on tasks and roles.
-
-**Practice by examples**
-```
+Inventory definition:
+```yaml
 server.domain.fr
 server[01-09].domain.fr
 
@@ -187,11 +149,10 @@ win01
 
 
 ## Ansible Tasks
-
-A task is a YAML structure to perform and action through Ansible
+A task is a YAML structure able to perform actions through Ansible.
 
 Task definition :
-```
+```yaml
 - name: The task name to make things clearly
   become: yes
   become_method: sudo
@@ -229,12 +190,10 @@ Task definition :
 
 
 ## Ansible Playbooks
+A playbook is the gathering between hosts where will be applied tasks.
 
-Practise by examples
-
-**Install yum package _httpd_ on RedHat servers**
-
-```
+**Install package on RHEL servers**
+```yaml
 - hosts: [redhat]
   become: true
   tasks
@@ -243,9 +202,9 @@ Practise by examples
       state: installed
 ```
 
-**Run roles on Docker servers**
-```
-- hosts: [docker]
+**Run roles on Docker servers but Master**
+```yaml
+- hosts: docker,!docker-master
   become: true
   roles:
   - docker
@@ -253,24 +212,20 @@ Practise by examples
 ```
 
 
-
 ## Ansible Variables
+### Variable Definition
 
-### Call a variable
+A Ansible variable is defined in *group_vars*, *host_vars*, *host_vars* and is called in Jinja Templating way : `{{ my_variable }}`. You can call variables everywhere in Ansible (tasks, variables, template, ...)
 
-A Ansible variable is called in Jinja Templating way : `{{ my_variable }}`.
-
-You can call variable everywhere in Ansible (tasks, variables, name, ...)
-
-### Define a variable
+### Variable Typology
 
 You can have 3 types of variables:
 * String
 * List
 * Dictionary
 
-A single Key Value where key do not have any space and value is a string (with or without quotation marks).
-```
+A variable is defined by a couple Key/Value where Key doesn't have any space and Value is a structure as defined above.
+```yaml
 my_string: "value"
 my_list: ["bob", "alice"]
 my_dict:
@@ -279,11 +234,9 @@ my_dict:
 ```
 
 ### Variable precedence
-
-You can set Ansible variables in multiple places like `group_vars`, `playbooks`, `roles` etc... but they are evaluated according to a precedence.
-
-Here is the order of precedence from least to greatest:
+You can set Ansible variables in multiple places like `group_vars`, `playbooks`, `roles`, etc... but they are evaluated according to a precedence. Here is the order of precedence from least to greatest:
 ```
+command line values
 role defaults
 inventory file or script group vars
 inventory group_vars/all
@@ -293,26 +246,24 @@ playbook group_vars/*
 inventory file or script host vars
 inventory host_vars/*
 playbook host_vars/*
-host facts
+host facts / cached set_facts
 play vars
 play vars_prompt
 play vars_files
 role vars (defined in role/vars/main.yml)
 block vars (only for tasks in block)
 task vars (only for the task)
-role (and include_role) params
-include params
 include_vars
 set_facts / registered vars
+role (and include_role) params
+include params
 extra vars (always win precedence)
 ```
 
 
 ## Ansible Plays
-
-A sufficient list of attributes for Ansible Play when running a playbooks:
-
-```
+A sufficient list of attributes for Ansible Play when running a playbook:
+```yaml
 - hosts: webservers
   accelerate: no
   accelerate_port: 5099
@@ -372,9 +323,7 @@ A sufficient list of attributes for Ansible Play when running a playbooks:
 
 
 ## Ansible Roles
-
 ### Structure of a role
-
 Role directories strucutre:
 ```
 roles/
@@ -393,16 +342,17 @@ roles/
         └── main.yml
 ```
 
-**Call role in your playbook**
-```
-- hosts: all
-  roles:
-  - my-role
-```
+These are what files refer to:
+* `my-role/defaults/main.yml` defines default variables for the role,
+* `my-role/files/file` file (without vars) to be copied,
+* `my-role/handlers/main.yml` defnies the handlers tasks,
+* `my-role/tasks/main.yml` is the main taskfile run thorugh the role,
+* `my-role/templates/template.yml.j2` template (with vars) to be copied,
+* `my-role/vars/main.yml` defines the vars to override,
+
 
 #### Role with simple task
-
-```
+```yaml
 - command: cat /etc/hosts
 ```
 
@@ -410,7 +360,7 @@ roles/
 File at `roles/example/files/my-file.sh`
 
 Task at `roles/example/tasks/main.yml`
-```
+```yaml
 - copy:
     src: my-file.sh
     dest: /tmp/my-file.sh
@@ -590,4 +540,6 @@ def process(self):
         return True
     # If check_mode is false keep doing your actions
 ```
+
+## Ansible Vault
 
