@@ -537,3 +537,48 @@ def process(self):
 
 ## Ansible Vault
 
+### Vault Configuration
+
+Ansible Vault Password configuration can be done in several ways:
+* Attribute `vault_password_file` in file `ansible.cfg`,
+* Env variable `ANSIBLE_VAULT_PASSWORD_FILE`,
+* Option `--vault-password-file` or `--vault-id` with password file in ansible command,
+* Option `--ask-vault-pass` with prompt in ansible command.
+
+
+### Vault File
+You can secure whole files with vault in encrypting them.
+```
+ansible-vault create foo.yml
+ansible-vault encrypt foo.yml
+```
+
+View and decrypt to clear file.
+```
+ansible-vault view foo.yml
+ansible-vault encrypt foo.yml
+```
+
+### Vault Variables
+You can also only encrypt value in variables files.
+```
+ansible-vault encrypt_string --name 'mykey' 'mysecret'
+```
+
+### Ansible with Vault
+If you have provided a vault password in configuration file then you will keep using ansible as usual.
+```
+```
+
+If not you will need to provide vault options to your ansible commands.
+```
+ansible-playbook site.yml --ask-vault-pass
+ansible-playbook site.yml --vault-password-file ~/.vault_pass
+ansible-playbook --vault-id dev@dfile-dev-password site.yml
+ansible-playbook --vault-id prod@prompt site.yml
+```
+
+You can also provide multiple vault resolvers to roll on multiple environments. Example for Dev with password file and Prod with prompt.
+```
+ansible-playbook --vault-id dev@dev-password --vault-id prod@prompt site.yml
+```
