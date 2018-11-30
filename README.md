@@ -1,7 +1,7 @@
 # Ansible RefCard
 RefCard for Ansible usage.
 
-Written by Germain LEFEBVRE by August 2018 for Ansible v2.7 usage.
+Written by Germain LEFEBVRE by December 2018 for Ansible v2.7 usage.
 
 
 **Table of Contents**
