@@ -202,6 +202,75 @@ A playbook is the gathering between hosts where will be applied tasks.
       state: installed
 ```
 
+**Update systems using Ansible playbook**
+```
+---
+- hosts: local
+  tasks: 
+    - name: Upgrade all packages to the latest version
+      apt:  
+        update_cache: yes
+        upgrade: yes
+    - name: Remove useless packages from the cache
+      apt:
+        autoclean: yes
+    - name: Remove dependencies that are no longer required
+      apt:
+        autoremove: yes
+...
+```
+
+**Deploy EC2 instances with Ansible
+```
+---
+- name: Creating Security Group
+  local_action:
+    module: ec2_group
+    name: "{{ security_group }}"
+    description: Security Group Giros
+    region: "{{ region }}"
+    rules: 
+    - proto: tcp
+      from_port: 22
+      to_port: 22
+      cidr_ip: 0.0.0.0/0
+    rules_egress:
+    - proto: all
+      cidr_ip: 0.0.0.0/0
+  register: basic_firewall
+
+- name: Creating EC2 instance
+  local_action: ec2
+    group={{ security_group }}
+    instance_type={{instance_type}}
+    image={{ image }}
+    wait=true
+    region={{ region }}
+    keypair={{ keypair }}
+    count={{ count }}
+  register: ec2
+
+
+- name: Adding instance for temp inventary
+  add_host: name={{ item.public_ip }} groups=giropops-new
+  with_items: "{{ ec2.instances }}"
+
+- name: Waiting for SSH
+  local_action: wait_for
+    host={{ item.public_ip }}
+    port=22
+    state=started
+  with_items: "{{ ec2.instances }}"
+
+- name: Adding a tag name for instance
+  local_action: ec2_tag resource={{ item.id }} region={{ region }} state=present
+  with_items: "{{ ec2.instances }}"
+  args: 
+    tags:
+      Name: DevOpsweek
+...
+```
+
 **Run roles on Docker servers but Master**
 ```yaml
 - hosts: docker,!docker-master
